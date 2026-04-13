@@ -1,0 +1,16 @@
+# AWS specific LoadBalancer annotations for EKS
+apiVersion: v1
+kind: Service
+metadata:
+  name: poultryguard-lb
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: poultryguard-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer

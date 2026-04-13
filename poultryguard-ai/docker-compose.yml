@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: poultryguard_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: poultryguard_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: poultryguard_redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    container_name: poultryguard_backend
+    restart: always
+    environment:
+      - MYSQL_SERVER=db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=password
+      - MYSQL_DB=poultryguard_db
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/app
+
+  celery_worker:
+    build: ./backend
+    container_name: poultryguard_worker
+    command: celery -A celery_worker.celery_app worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: poultryguard_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
